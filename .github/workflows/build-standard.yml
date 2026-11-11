@@ -27,19 +27,31 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Generate Dummy Keystore
+        run: |
+          mkdir -p app
+          keytool -genkey -v -keystore app/release.jks -alias antigem -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=AntiGem, OU=Dev, O=AntiGem, L=City, S=State, C=US"
+
       - name: Grant Execute Permissions
         run: |
           chmod +x gradlew
           if [ -d "scripts" ]; then chmod -R +x scripts/; fi
 
-      - name: Build Standard Debug APK
+      - name: Build APKs with Official Script
         run: |
-          ./gradlew assembleDebug --stacktrace
+          if [ -f "scripts/build_all_apks.sh" ]; then
+            ./scripts/build_all_apks.sh --release || ./gradlew assembleDebug --stacktrace
+          else
+            ./gradlew assembleDebug --stacktrace
+          fi
 
-      - name: Upload APK Artifacts
+      - name: Upload Built APKs
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: antigem-standard-apk
-          path: app/build/outputs/apk/**/*.apk
-          
+          name: antigem-apks
+          path: |
+            output/**/*.apk
+            app/build/outputs/apk/**/*.apk
+            build/outputs/**/*.apk
+            
