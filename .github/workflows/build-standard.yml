@@ -10,23 +10,44 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
 
-      - name: Set up JDK 17
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
+          java-version: '21'
 
-      - name: Grant Execute Permission for Gradlew
-        run: chmod +x gradlew
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
 
-      - name: Build Standard Release APK
-        run: ./gradlew assembleStandardRelease --stacktrace
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Upload APK Artifact
+      - name: Grant Execute Permissions
+        run: |
+          chmod +x gradlew
+          if [ -d "scripts" ]; then chmod -R +x scripts/; fi
+
+      - name: Build Standard Debug APK
+        run: |
+          if [ -f "scripts/build_all_apks.sh" ]; then
+            # Run the project build script in debug mode to bypass missing keystore
+            ./scripts/build_all_apks.sh --debug || ./gradlew assembleDebug --stacktrace
+          else
+            ./gradlew assembleDebug --stacktrace
+          fi
+
+      - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: antigem-standard-apk
-          path: app/build/outputs/apk/**/*.apk
-          
+          path: |
+            output/**/*.apk
+            app/build/outputs/apk/**/*.apk
+            
