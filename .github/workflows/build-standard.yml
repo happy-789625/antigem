@@ -12,7 +12,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: recursive
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -35,19 +34,12 @@ jobs:
 
       - name: Build Standard Debug APK
         run: |
-          if [ -f "scripts/build_all_apks.sh" ]; then
-            # Run the project build script in debug mode to bypass missing keystore
-            ./scripts/build_all_apks.sh --debug || ./gradlew assembleDebug --stacktrace
-          else
-            ./gradlew assembleDebug --stacktrace
-          fi
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: antigem-standard-apk
-          path: |
-            output/**/*.apk
-            app/build/outputs/apk/**/*.apk
-            
+          path: app/build/outputs/apk/**/*.apk
+          
